@@ -273,7 +273,7 @@
           vec3 leafGlow = mix(vec3(0.05, 0.52, 0.58), vec3(0.50, 0.92, 0.84), wash);
           color += leafGlow * leafShape * 0.2;
 
-          vec2 sunPos = vec2(0.22, 0.58);
+          vec2 sunPos = vec2(0.02, 0.20);
           vec2 sunDelta = p - sunPos;
           vec2 causticUv = (p + flow * 0.12) * 6.8;
           float causticA = fbm(causticUv + vec2(t * 0.10, -t * 0.07));
@@ -286,20 +286,83 @@
           float patchE = smoothstep(0.56, 0.82, fbm(causticUv * 0.72 + vec2(-6.2, 4.1) + vec2(-t * 0.02, t * 0.025)));
           float webRipple = max(max(patchA, patchB * 0.8), max(patchC * 0.65, patchD * 0.75));
           webRipple = max(webRipple, patchE * 0.6);
-          float sunDist = length(sunDelta * vec2(0.95, 1.15));
-          float webEnvelope = 1.0 - smoothstep(0.28, 1.25, sunDist + (flow.x - 0.5) * 0.02);
-          float centerMist = softCircle(p + flow * 0.02, sunPos + vec2(0.02, -0.01), 0.28, 0.42);
+          float sunDist = length(sunDelta * vec2(0.90, 1.45));
+          float topPocket = 1.0 - smoothstep(0.18, 0.70, length((p - vec2(0.02, 0.18)) * vec2(0.95, 1.65)));
+          float webEnvelope = (1.0 - smoothstep(0.14, 0.82, sunDist + (flow.x - 0.5) * 0.01)) * topPocket;
+          float centerMist = softCircle(p + flow * 0.02, sunPos + vec2(0.03, -0.01), 0.18, 0.22);
           float sunCore = webRipple * webEnvelope;
-          float sunBloom = mix(centerMist, webRipple, 0.45) * webEnvelope;
-          float sunScatter = softCircle(p + flow * 0.03, sunPos + vec2(-0.04, 0.03), 0.48, 0.4) * (0.22 + webRipple * 0.28);
+          float sunBloom = mix(centerMist, webRipple, 0.55) * webEnvelope;
+          float sunScatter = softCircle(p + flow * 0.02, sunPos + vec2(0.00, -0.02), 0.34, 0.24) * (0.16 + webRipple * 0.22) * topPocket;
+          float dappleEnvelope = 1.0 - smoothstep(0.10, 0.52, length((p - vec2(0.02, 0.24)) * vec2(0.95, 2.1)));
+          vec2 dappleDriftA = vec2(sin(t * 0.22 + 0.6), cos(t * 0.18 + 0.2)) * 0.012;
+          vec2 dappleDriftB = vec2(sin(t * 0.27 + 1.4), cos(t * 0.21 + 1.1)) * 0.010;
+          vec2 dappleDriftC = vec2(sin(t * 0.19 + 2.1), cos(t * 0.24 + 2.7)) * 0.014;
+          vec2 dappleDriftD = vec2(sin(t * 0.23 + 3.0), cos(t * 0.17 + 3.5)) * 0.011;
+          vec2 dappleDriftE = vec2(sin(t * 0.18 + 4.2), cos(t * 0.20 + 4.6)) * 0.013;
+          vec2 dappleDriftF = vec2(sin(t * 0.25 + 5.1), cos(t * 0.22 + 5.5)) * 0.009;
+          vec2 dappleDriftG = vec2(sin(t * 0.28 + 0.9), cos(t * 0.19 + 1.8)) * 0.008;
+          vec2 dappleDriftH = vec2(sin(t * 0.21 + 1.9), cos(t * 0.23 + 0.7)) * 0.010;
+          vec2 dappleDriftI = vec2(sin(t * 0.24 + 2.8), cos(t * 0.18 + 2.0)) * 0.009;
+          vec2 dappleDriftJ = vec2(sin(t * 0.20 + 3.7), cos(t * 0.22 + 3.1)) * 0.011;
+          vec2 dappleDriftK = vec2(sin(t * 0.26 + 4.8), cos(t * 0.17 + 4.4)) * 0.008;
+          float dappleNoise = 0.82 + 0.18 * fbm((p + flow * 0.02) * 10.0 + vec2(t * 0.05, -t * 0.04));
+          float dappleA = softCircle(p + flow * 0.010, vec2(-0.24, 0.29) + dappleDriftA, 0.010, 0.018) * (0.55 + 0.45 * sin(t * 0.62 + 0.4)) * dappleNoise;
+          float dappleB = softCircle(p - flow * 0.008, vec2(-0.18, 0.24) + dappleDriftB, 0.007, 0.014) * (0.55 + 0.45 * sin(t * 0.84 + 1.6)) * dappleNoise;
+          float dappleC = softCircle(p + flow * 0.012, vec2(-0.11, 0.27) + dappleDriftC, 0.012, 0.019) * (0.55 + 0.45 * sin(t * 0.58 + 2.2)) * dappleNoise;
+          float dappleD = softCircle(p - flow * 0.010, vec2(-0.03, 0.23) + dappleDriftD, 0.008, 0.015) * (0.55 + 0.45 * sin(t * 0.78 + 3.0)) * dappleNoise;
+          float dappleE = softCircle(p + flow * 0.008, vec2(0.04, 0.29) + dappleDriftE, 0.013, 0.020) * (0.55 + 0.45 * sin(t * 0.49 + 4.1)) * dappleNoise;
+          float dappleF = softCircle(p + flow * 0.006, vec2(0.10, 0.25) + dappleDriftF, 0.009, 0.016) * (0.55 + 0.45 * sin(t * 0.72 + 5.0)) * dappleNoise;
+          float dappleG = softCircle(p - flow * 0.007, vec2(0.16, 0.20) + dappleDriftG, 0.006, 0.012) * (0.55 + 0.45 * sin(t * 0.91 + 0.9)) * dappleNoise;
+          float dappleH = softCircle(p + flow * 0.009, vec2(0.22, 0.27) + dappleDriftH, 0.011, 0.018) * (0.55 + 0.45 * sin(t * 0.66 + 2.7)) * dappleNoise;
+          float dappleI = softCircle(p - flow * 0.006, vec2(0.28, 0.23) + dappleDriftI, 0.007, 0.014) * (0.55 + 0.45 * sin(t * 0.88 + 5.5)) * dappleNoise;
+          float dappleJ = softCircle(p + flow * 0.010, vec2(0.34, 0.28) + dappleDriftJ, 0.012, 0.018) * (0.55 + 0.45 * sin(t * 0.57 + 1.9)) * dappleNoise;
+          float dappleK = softCircle(p - flow * 0.005, vec2(0.40, 0.22) + dappleDriftK, 0.006, 0.012) * (0.55 + 0.45 * sin(t * 0.93 + 3.9)) * dappleNoise;
+          float sunDapple = (dappleA + dappleB + dappleC + dappleD + dappleE + dappleF + dappleG + dappleH + dappleI + dappleJ + dappleK) * dappleEnvelope;
           vec3 sunColor = vec3(0.88, 0.98, 0.95);
-          color += sunColor * sunCore * 0.24;
-          color += vec3(0.68, 0.96, 0.92) * sunBloom * 0.22;
-          color += vec3(0.72, 0.93, 0.96) * sunScatter * 0.09;
+          color += sunColor * sunCore * 0.14;
+          color += vec3(0.68, 0.96, 0.92) * sunBloom * 0.11;
+          color += vec3(0.72, 0.93, 0.96) * sunScatter * 0.045;
+          color += vec3(0.95, 0.99, 0.96) * sunDapple * 0.20;
+          color += vec3(0.74, 0.96, 0.94) * sunDapple * 0.05;
 
-          float rays = fbm(vec2(atan(p.y - sunPos.y, p.x - sunPos.x) * 2.1, length(p - sunPos) * 2.3 - t * 0.05));
-          float rayMask = smoothstep(0.48, 1.0, rays) * (1.0 - smoothstep(0.08, 1.1, length(p - sunPos)));
-          color += vec3(0.78, 0.97, 0.96) * rayMask * 0.06;
+          vec2 rayOrigin = vec2(0.04, 0.44);
+          float sourceBand = 1.0 - smoothstep(0.05, 0.18, length((p - vec2(0.03, 0.27)) * vec2(1.0, 3.6)));
+          float swayA = sin(t * 0.62 + 0.4) * 0.032;
+          float swayB = sin(t * 0.84 + 1.6) * 0.028;
+          float swayC = sin(t * 0.58 + 2.2) * 0.026;
+          float swayD = sin(t * 0.49 + 4.1) * 0.034;
+          vec2 rayAStart = rayOrigin + vec2(-0.15 + swayA * 0.4, 0.01);
+          vec2 rayBStart = rayOrigin + vec2(-0.04 + swayB * 0.35, -0.015);
+          vec2 rayCStart = rayOrigin + vec2(0.09 + swayC * 0.3, -0.015);
+          vec2 rayDStart = rayOrigin + vec2(0.21 + swayD * 0.4, 0.01);
+          vec2 rayAEnd = vec2(-0.62 + swayA, -0.62);
+          vec2 rayBEnd = vec2(-0.16 + swayB, -0.96);
+          vec2 rayCEnd = vec2(0.12 + swayC, -1.00);
+          vec2 rayDEnd = vec2(0.58 + swayD, -0.52);
+
+          float rayAInner = softLine(p, rayAStart, rayAEnd, 0.006, 0.025);
+          float rayBInner = softLine(p, rayBStart, rayBEnd, 0.0055, 0.022);
+          float rayCInner = softLine(p, rayCStart, rayCEnd, 0.0055, 0.022);
+          float rayDInner = softLine(p, rayDStart, rayDEnd, 0.006, 0.025);
+
+          float rayAOuter = softLine(p, rayAStart, rayAEnd, 0.026, 0.11);
+          float rayBOuter = softLine(p, rayBStart, rayBEnd, 0.022, 0.10);
+          float rayCOuter = softLine(p, rayCStart, rayCEnd, 0.022, 0.10);
+          float rayDOuter = softLine(p, rayDStart, rayDEnd, 0.026, 0.11);
+
+          float rayCore = rayAInner + rayBInner + rayCInner + rayDInner;
+          float rayGlow = rayAOuter + rayBOuter + rayCOuter + rayDOuter;
+          float rays = (rayCore * 1.25 + rayGlow * 0.55) * sourceBand;
+          float rayFade = 1.0 - smoothstep(0.00, 1.06, length((p - vec2(0.03, -0.18)) * vec2(0.80, 1.0)));
+          float sourceClamp = smoothstep(0.02, 0.11, length((p - vec2(0.03, 0.27)) * vec2(1.15, 2.2)));
+          float rayPulse = 0.72 + 0.28 * (
+            0.25 * sin(t * 0.62 + 0.4) +
+            0.25 * sin(t * 0.84 + 1.6) +
+            0.25 * sin(t * 0.58 + 2.2) +
+            0.25 * sin(t * 0.49 + 4.1)
+          );
+          color += vec3(0.94, 0.99, 0.99) * rays * rayFade * rayPulse * sourceClamp * 0.78;
+          color += vec3(0.74, 0.95, 0.99) * rayGlow * rayFade * rayPulse * sourceClamp * 0.20;
 
           float sparkleField = fbm((p + flow * 0.35) * 12.0 + vec2(0.0, -t * 0.05));
           float sparkle = smoothstep(0.83, 0.98, sparkleField);
