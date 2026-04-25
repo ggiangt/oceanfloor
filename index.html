@@ -191,6 +191,103 @@
           return 1.0 - smoothstep(radius, radius + blur, d);
         }
 
+        float jellyfishShape(vec2 p, vec2 center, float scale, float phase, float angle) {
+          vec2 q = (p - center) / scale;
+          float c = cos(angle);
+          float s = sin(angle);
+          q = mat2(c, -s, s, c) * q;
+          q.y *= -1.0;
+          q.x *= 0.95;
+          q.y -= 0.10;
+
+          float pulse = 0.84 + 0.26 * sin(phase);
+          float wobbleA = 0.10 * sin(phase * 1.3 + q.y * 4.0);
+          float wobbleB = 0.08 * cos(phase * 0.9 + q.x * 5.2);
+          vec2 bellWarp = q;
+          bellWarp.x += wobbleA * (0.6 - clamp(q.y, -0.4, 0.6));
+          bellWarp.y += wobbleB * 0.18;
+
+          float bell = softCircle(bellWarp * vec2(0.96 + 0.08 * sin(phase * 0.7), 1.10 / pulse), vec2(0.0, 0.03), 0.58, 0.22);
+          bell *= 1.0 - smoothstep(0.02, 0.48, q.y);
+
+          float rim = bell - softCircle(bellWarp * vec2(0.98 + 0.06 * cos(phase * 0.8), 1.04 / pulse), vec2(0.0, 0.04), 0.47, 0.18);
+          rim = max(rim, 0.0);
+
+          float lobeA = softCircle(q * vec2(1.55, 1.7), vec2(-0.12 + 0.03 * sin(phase), 0.10), 0.16, 0.14);
+          float lobeB = softCircle(q * vec2(1.55, 1.7), vec2(0.12 + 0.03 * cos(phase * 0.9), 0.10), 0.16, 0.14);
+          float lobeC = softCircle(q * vec2(1.45, 1.6), vec2(0.00, -0.02 + 0.02 * sin(phase * 1.1)), 0.18, 0.14);
+          float innerGlow = max(max(lobeA, lobeB), lobeC) * bell;
+
+          float oralA = softLine(q, vec2(-0.06, 0.08), vec2(-0.10 + 0.05 * sin(phase), 0.54), 0.024, 0.10);
+          float oralB = softLine(q, vec2(0.03, 0.10), vec2(0.10 + 0.06 * cos(phase * 0.8), 0.62), 0.028, 0.11);
+          float oralC = softLine(q, vec2(0.00, 0.02), vec2(0.00 + 0.04 * sin(phase * 1.2), 0.44), 0.020, 0.09);
+
+          vec2 t1a = vec2(-0.22, 0.00);
+          vec2 t1b = vec2(-0.28 + 0.07 * sin(phase * 0.8), 0.30);
+          vec2 t1c = vec2(-0.20 + 0.12 * sin(phase * 0.8 + 0.8), 0.64);
+          vec2 t1d = vec2(-0.30 + 0.10 * sin(phase * 0.8 + 1.6), 0.98);
+          float tentacle1 = max(
+            softLine(q, t1a, t1b, 0.012, 0.080),
+            max(
+              softLine(q, t1b, t1c, 0.011, 0.076),
+              max(
+                softLine(q, t1c, t1d, 0.010, 0.072),
+                max(softCircle(q, t1b, 0.020, 0.055), softCircle(q, t1c, 0.018, 0.050))
+              )
+            )
+          );
+
+          vec2 t2a = vec2(-0.06, 0.02);
+          vec2 t2b = vec2(-0.12 + 0.05 * cos(phase * 0.9), 0.34);
+          vec2 t2c = vec2(-0.02 + 0.08 * cos(phase * 0.9 + 0.9), 0.70);
+          vec2 t2d = vec2(-0.14 + 0.08 * cos(phase * 0.9 + 1.7), 1.04);
+          float tentacle2 = max(
+            softLine(q, t2a, t2b, 0.011, 0.076),
+            max(
+              softLine(q, t2b, t2c, 0.010, 0.072),
+              max(
+                softLine(q, t2c, t2d, 0.009, 0.068),
+                max(softCircle(q, t2b, 0.018, 0.050), softCircle(q, t2c, 0.016, 0.046))
+              )
+            )
+          );
+
+          vec2 t3a = vec2(0.10, 0.02);
+          vec2 t3b = vec2(0.16 + 0.05 * sin(phase * 1.0), 0.36);
+          vec2 t3c = vec2(0.04 + 0.09 * sin(phase * 1.0 + 0.8), 0.74);
+          vec2 t3d = vec2(0.16 + 0.08 * sin(phase * 1.0 + 1.5), 1.08);
+          float tentacle3 = max(
+            softLine(q, t3a, t3b, 0.011, 0.076),
+            max(
+              softLine(q, t3b, t3c, 0.010, 0.072),
+              max(
+                softLine(q, t3c, t3d, 0.009, 0.068),
+                max(softCircle(q, t3b, 0.018, 0.050), softCircle(q, t3c, 0.016, 0.046))
+              )
+            )
+          );
+
+          vec2 t4a = vec2(0.24, 0.00);
+          vec2 t4b = vec2(0.30 + 0.07 * cos(phase * 0.75), 0.30);
+          vec2 t4c = vec2(0.22 + 0.12 * cos(phase * 0.75 + 0.8), 0.62);
+          vec2 t4d = vec2(0.32 + 0.10 * cos(phase * 0.75 + 1.6), 0.94);
+          float tentacle4 = max(
+            softLine(q, t4a, t4b, 0.012, 0.080),
+            max(
+              softLine(q, t4b, t4c, 0.011, 0.076),
+              max(
+                softLine(q, t4c, t4d, 0.010, 0.072),
+                max(softCircle(q, t4b, 0.020, 0.055), softCircle(q, t4c, 0.018, 0.050))
+              )
+            )
+          );
+
+          float tentacleDrift = 0.88 + 0.12 * sin(phase * 0.6 + q.y * 3.0);
+          float tentacles = (tentacle1 + tentacle2 + tentacle3 + tentacle4) * 0.32 * tentacleDrift;
+          float oralArms = (oralA + oralB + oralC) * 0.58;
+          return bell + rim * 0.9 + innerGlow * 0.7 + oralArms + tentacles;
+        }
+
         vec3 pastelPalette(float t) {
           vec3 deep = vec3(0.03, 0.21, 0.34);
           vec3 teal = vec3(0.02, 0.50, 0.60);
@@ -306,17 +403,18 @@
           vec2 dappleDriftJ = vec2(sin(t * 0.20 + 3.7), cos(t * 0.22 + 3.1)) * 0.011;
           vec2 dappleDriftK = vec2(sin(t * 0.26 + 4.8), cos(t * 0.17 + 4.4)) * 0.008;
           float dappleNoise = 0.82 + 0.18 * fbm((p + flow * 0.02) * 10.0 + vec2(t * 0.05, -t * 0.04));
-          float dappleA = softCircle(p + flow * 0.010, vec2(-0.24, 0.29) + dappleDriftA, 0.010, 0.018) * (0.55 + 0.45 * sin(t * 0.62 + 0.4)) * dappleNoise;
-          float dappleB = softCircle(p - flow * 0.008, vec2(-0.18, 0.24) + dappleDriftB, 0.007, 0.014) * (0.55 + 0.45 * sin(t * 0.84 + 1.6)) * dappleNoise;
-          float dappleC = softCircle(p + flow * 0.012, vec2(-0.11, 0.27) + dappleDriftC, 0.012, 0.019) * (0.55 + 0.45 * sin(t * 0.58 + 2.2)) * dappleNoise;
-          float dappleD = softCircle(p - flow * 0.010, vec2(-0.03, 0.23) + dappleDriftD, 0.008, 0.015) * (0.55 + 0.45 * sin(t * 0.78 + 3.0)) * dappleNoise;
-          float dappleE = softCircle(p + flow * 0.008, vec2(0.04, 0.29) + dappleDriftE, 0.013, 0.020) * (0.55 + 0.45 * sin(t * 0.49 + 4.1)) * dappleNoise;
-          float dappleF = softCircle(p + flow * 0.006, vec2(0.10, 0.25) + dappleDriftF, 0.009, 0.016) * (0.55 + 0.45 * sin(t * 0.72 + 5.0)) * dappleNoise;
-          float dappleG = softCircle(p - flow * 0.007, vec2(0.16, 0.20) + dappleDriftG, 0.006, 0.012) * (0.55 + 0.45 * sin(t * 0.91 + 0.9)) * dappleNoise;
-          float dappleH = softCircle(p + flow * 0.009, vec2(0.22, 0.27) + dappleDriftH, 0.011, 0.018) * (0.55 + 0.45 * sin(t * 0.66 + 2.7)) * dappleNoise;
-          float dappleI = softCircle(p - flow * 0.006, vec2(0.28, 0.23) + dappleDriftI, 0.007, 0.014) * (0.55 + 0.45 * sin(t * 0.88 + 5.5)) * dappleNoise;
-          float dappleJ = softCircle(p + flow * 0.010, vec2(0.34, 0.28) + dappleDriftJ, 0.012, 0.018) * (0.55 + 0.45 * sin(t * 0.57 + 1.9)) * dappleNoise;
-          float dappleK = softCircle(p - flow * 0.005, vec2(0.40, 0.22) + dappleDriftK, 0.006, 0.012) * (0.55 + 0.45 * sin(t * 0.93 + 3.9)) * dappleNoise;
+          float dappleSoft = 0.88 + 0.12 * fbm((p - flow * 0.015) * 7.5 + vec2(-t * 0.03, t * 0.02));
+          float dappleA = softCircle(p + flow * 0.010, vec2(-0.24, 0.29) + dappleDriftA, 0.010, 0.026) * (0.55 + 0.45 * sin(t * 0.62 + 0.4)) * dappleNoise * dappleSoft;
+          float dappleB = softCircle(p - flow * 0.008, vec2(-0.18, 0.24) + dappleDriftB, 0.007, 0.021) * (0.55 + 0.45 * sin(t * 0.84 + 1.6)) * dappleNoise * dappleSoft;
+          float dappleC = softCircle(p + flow * 0.012, vec2(-0.11, 0.27) + dappleDriftC, 0.012, 0.028) * (0.55 + 0.45 * sin(t * 0.58 + 2.2)) * dappleNoise * dappleSoft;
+          float dappleD = softCircle(p - flow * 0.010, vec2(-0.03, 0.23) + dappleDriftD, 0.008, 0.023) * (0.55 + 0.45 * sin(t * 0.78 + 3.0)) * dappleNoise * dappleSoft;
+          float dappleE = softCircle(p + flow * 0.008, vec2(0.04, 0.29) + dappleDriftE, 0.013, 0.030) * (0.55 + 0.45 * sin(t * 0.49 + 4.1)) * dappleNoise * dappleSoft;
+          float dappleF = softCircle(p + flow * 0.006, vec2(0.10, 0.25) + dappleDriftF, 0.009, 0.024) * (0.55 + 0.45 * sin(t * 0.72 + 5.0)) * dappleNoise * dappleSoft;
+          float dappleG = softCircle(p - flow * 0.007, vec2(0.16, 0.20) + dappleDriftG, 0.006, 0.019) * (0.55 + 0.45 * sin(t * 0.91 + 0.9)) * dappleNoise * dappleSoft;
+          float dappleH = softCircle(p + flow * 0.009, vec2(0.22, 0.27) + dappleDriftH, 0.011, 0.027) * (0.55 + 0.45 * sin(t * 0.66 + 2.7)) * dappleNoise * dappleSoft;
+          float dappleI = softCircle(p - flow * 0.006, vec2(0.28, 0.23) + dappleDriftI, 0.007, 0.021) * (0.55 + 0.45 * sin(t * 0.88 + 5.5)) * dappleNoise * dappleSoft;
+          float dappleJ = softCircle(p + flow * 0.010, vec2(0.34, 0.28) + dappleDriftJ, 0.012, 0.027) * (0.55 + 0.45 * sin(t * 0.57 + 1.9)) * dappleNoise * dappleSoft;
+          float dappleK = softCircle(p - flow * 0.005, vec2(0.40, 0.22) + dappleDriftK, 0.006, 0.019) * (0.55 + 0.45 * sin(t * 0.93 + 3.9)) * dappleNoise * dappleSoft;
           float sunDapple = (dappleA + dappleB + dappleC + dappleD + dappleE + dappleF + dappleG + dappleH + dappleI + dappleJ + dappleK) * dappleEnvelope;
           vec3 sunColor = vec3(0.88, 0.98, 0.95);
           color += sunColor * sunCore * 0.14;
@@ -327,6 +425,12 @@
 
           vec2 rayOrigin = vec2(0.04, 0.44);
           float sourceBand = 1.0 - smoothstep(0.05, 0.18, length((p - vec2(0.03, 0.27)) * vec2(1.0, 3.6)));
+          float sharedDapplePulse = 0.72 + 0.28 * (
+            0.25 * sin(t * 0.62 + 0.4) +
+            0.25 * sin(t * 0.84 + 1.6) +
+            0.25 * sin(t * 0.58 + 2.2) +
+            0.25 * sin(t * 0.49 + 4.1)
+          );
           float swayA = sin(t * 0.62 + 0.4) * 0.032;
           float swayB = sin(t * 0.84 + 1.6) * 0.028;
           float swayC = sin(t * 0.58 + 2.2) * 0.026;
@@ -355,14 +459,48 @@
           float rays = (rayCore * 1.25 + rayGlow * 0.55) * sourceBand;
           float rayFade = 1.0 - smoothstep(0.00, 1.06, length((p - vec2(0.03, -0.18)) * vec2(0.80, 1.0)));
           float sourceClamp = smoothstep(0.02, 0.11, length((p - vec2(0.03, 0.27)) * vec2(1.15, 2.2)));
-          float rayPulse = 0.72 + 0.28 * (
-            0.25 * sin(t * 0.62 + 0.4) +
-            0.25 * sin(t * 0.84 + 1.6) +
-            0.25 * sin(t * 0.58 + 2.2) +
-            0.25 * sin(t * 0.49 + 4.1)
-          );
-          color += vec3(0.94, 0.99, 0.99) * rays * rayFade * rayPulse * sourceClamp * 0.78;
-          color += vec3(0.74, 0.95, 0.99) * rayGlow * rayFade * rayPulse * sourceClamp * 0.20;
+          color += vec3(0.94, 0.99, 0.99) * rays * rayFade * sharedDapplePulse * sourceClamp * 0.78;
+          color += vec3(0.74, 0.95, 0.99) * rayGlow * rayFade * sharedDapplePulse * sourceClamp * 0.20;
+
+          float jellyTime = t * 0.18;
+          float school = 0.0;
+          float schoolGlow = 0.0;
+          for (int i = 0; i < 8; i++) {
+            float fi = float(i);
+            float layer = fract(fi * 0.17 + 0.23);
+            float drift = jellyTime * (0.24 + layer * 0.12);
+            vec2 jellyPos = vec2(
+              -0.54 + fi * 0.15 + 0.08 * sin(drift + fi * 1.7),
+              -0.58 + mod(drift * 0.22 + fi * 0.19, 1.55)
+            );
+            jellyPos.y = mod(jellyPos.y + 1.05, 2.10) - 1.05;
+            float baseScale = 0.085 + 0.032 * sin(fi * 1.9 + 0.6);
+            float bigMultiplier = 1.0;
+            if (i == 1) {
+              bigMultiplier = 2.0;
+            }
+            if (i == 4) {
+              bigMultiplier = 2.5;
+            }
+            if (i == 6) {
+              bigMultiplier = 3.0;
+            }
+            float scale = baseScale * bigMultiplier;
+            float pulseSpeed = 0.65 + layer * 0.55 + (bigMultiplier - 1.0) * 0.42 + 0.18 * sin(fi * 1.3);
+            float pulsePhase = t * pulseSpeed + fi * 1.4;
+            float angle = 0.22 * sin(fi * 1.7 + t * 0.18) + 0.10 * cos(fi * 0.9);
+            float jelly = jellyfishShape(p + flow * 0.015, jellyPos, scale, pulsePhase, angle);
+            float depthFade = 1.0 - smoothstep(0.62, 1.05, length((p - jellyPos) * vec2(0.9, 1.0)));
+            float topFade = smoothstep(0.18, -0.38, jellyPos.y);
+            float pulseFade = 0.72 + 0.28 * sin(pulsePhase);
+            school += jelly * depthFade * pulseFade * topFade;
+            schoolGlow += softCircle(p, jellyPos, scale * 0.52, scale * 0.75) * depthFade * pulseFade * topFade;
+          }
+          school = clamp(school, 0.0, 1.0);
+          schoolGlow = clamp(schoolGlow, 0.0, 1.0);
+          color += vec3(0.20, 0.68, 0.88) * schoolGlow * 0.10;
+          color = mix(color, vec3(0.38, 0.88, 0.98), school * 0.28);
+          color += vec3(0.72, 0.96, 1.0) * school * 0.10;
 
           float sparkleField = fbm((p + flow * 0.35) * 12.0 + vec2(0.0, -t * 0.05));
           float sparkle = smoothstep(0.83, 0.98, sparkleField);
@@ -375,6 +513,9 @@
 
           float haze = smoothstep(0.0, 1.0, fbm(p * 2.0 + vec2(4.0, 1.0)));
           color = mix(color, vec3(0.84, 0.96, 0.95), 0.006 + haze * 0.012);
+
+          float bottomBlue = 1.0 - smoothstep(-0.88, -0.54, p.y);
+          color = mix(color, vec3(0.04, 0.17, 0.30), bottomBlue * 0.30);
 
           float vignette = 1.0 - smoothstep(0.18, 1.25, length(p * vec2(0.85, 1.0)));
           color *= 0.93 + vignette * 0.12;
