@@ -103,6 +103,11 @@
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     composition.appendChild(renderer.domElement);
 
+    const jellyAudio = new Audio("file:///Users/giangtran/Downloads/533979__kaekhor__jellyfish.wav");
+    jellyAudio.preload = "auto";
+    jellyAudio.loop = true;
+    jellyAudio.volume = 0.18;
+
     const uniforms = {
       uTime: { value: 0 },
       uResolution: { value: new THREE.Vector2(1, 1) },
@@ -585,6 +590,17 @@
       const y = (event.clientY - rect.top) / rect.height;
       uniforms.uMouse.value.set(x, 1.0 - y);
     });
+
+    const startJellyAudio = async () => {
+      try {
+        jellyAudio.currentTime = 0;
+        await jellyAudio.play();
+      } catch (error) {
+        console.warn("Jellyfish audio could not start automatically.", error);
+      }
+    };
+
+    window.addEventListener("pointerdown", startJellyAudio, { once: true });
 
     window.addEventListener("keydown", (event) => {
       if (event.key >= "0" && event.key <= "5") {
